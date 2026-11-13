@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1e1b2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="ZeK: Görev Kavanozu & Kruvasan Krallığı — DEHB dostu 16-bit aksiyonlu görev oyunu.">
+  <title>ZeK: Görev Kavanozu &amp; Kruvasan Krallığı</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/jpeg" href="./IMG_9A4EEE619E96-1.jpeg">
+  <link rel="apple-touch-icon" href="./IMG_9A4EEE619E96-1.jpeg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell" id="appShell">
+    <!-- Top Sticky HUD -->
+    <header class="hud-header">
+      <div class="hud-profile">
+        <button type="button" class="avatar-btn" id="avatarToggleBtn" title="Portre Modunu Değiştir (Gerçek / 16-Bit)" aria-label="ZeK portre modunu değiştir">
+          <img src="./IMG_9A4EEE619E96-1.jpeg" alt="Şef ZeK" class="hud-avatar-img" id="hudAvatarImg" width="48" height="48">
+          <canvas class="hud-avatar-pixel hidden" id="hudAvatarPixel" width="48" height="48" aria-hidden="true"></canvas>
+          <span class="lvl-badge" id="hudLevel">Sv.1</span>
+        </button>
+        <div class="hud-identity">
+          <div class="hud-name-row">
+            <h1 class="hud-title">ZeK</h1>
+            <span class="sync-pill" id="syncStatusPill" title="Kayıt Durumu">💾 Yerel</span>
+          </div>
+          <div class="xp-bar-wrap" aria-label="Deneyim puanı">
+            <div class="xp-bar-fill" id="hudXpBar" style="width: 0%"></div>
+            <span class="xp-bar-text" id="hudXpText">0 / 200 XP</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-stats">
+        <div class="stat-pill stat-gold" title="Altın Kruvasan">
+          <span aria-hidden="true">🥐</span>
+          <span id="hudGold">0</span>
+        </div>
+        <div class="stat-pill stat-tickets" title="Aksiyon Bileti">
+          <span aria-hidden="true">🎟️</span>
+          <span id="hudTickets">1</span>
+        </div>
+        <div class="stat-pill stat-streak" title="Seri">
+          <span aria-hidden="true">🔥</span>
+          <span id="hudStreak">0</span>
+        </div>
+        <button type="button" class="icon-btn" id="openSettingsBtn" aria-label="Ayarlar ve Yedekleme">
+          ⚙️
+        </button>
+      </div>
+    </header>
+
+    <!-- Invasion Alert Banner (shown when gardenInvaded === true) -->
+    <div class="invasion-banner hidden" id="invasionBanner" role="alert">
+      <div class="invasion-content">
+        <span class="invasion-icon">🐦‍⬛🔥</span>
+        <div>
+          <strong>EYVAH! Kargalar Bahçeyi Bastı!</strong>
+          <p>Hamur yandı ve çiçekler soluyor. Kurtarma aksiyonuyla kargaları kov veya 5 dk telafi yap!</p>
+        </div>
+      </div>
+      <div class="invasion-actions">
+        <button type="button" class="btn btn-danger btn-sm" id="bannerRescueGameBtn">⚔️ Kargaları Kov</button>
+        <button type="button" class="btn btn-warning btn-sm" id="bannerTelafiBtn">⏱️ 5 Dk Telafi</button>
+      </div>
+    </div>
+
+    <!-- Main Scrollable Content -->
+    <main class="main-content">
+      <!-- VIEW 1: KAVANOZ & FIRIN -->
+      <section class="view active" id="view-jar" aria-labelledby="jarViewTitle">
+        <!-- ZeK Speech Bubble -->
+        <div class="zek-speech-card">
+          <img src="./IMG_9A4EEE619E96-1.jpeg" alt="ZeK" class="speech-photo" id="speechPhoto" width="56" height="56">
+          <div class="speech-body">
+            <div class="speech-label" id="jarViewTitle">Şef ZeK Diyor Ki:</div>
+            <p id="zekSpeechText">Kavanozu çalkala, bir görev çek! Fırın sıcakken bitirirsen aksiyon oyunu ve nadir kuşlar seni bekler.</p>
+          </div>
+        </div>
+
+        <!-- Active Oven Timer Card (Visible when a task is active) -->
+        <article class="oven-card hidden" id="activeOvenCard">
+          <div class="oven-header">
+            <span class="oven-badge" id="activeTaskBadge">🥐 Kolay</span>
+            <span class="oven-category" id="activeTaskCategory">Mutfak</span>
+          </div>
+          <h2 class="oven-task-title" id="activeTaskTitle">Görev Başlığı</h2>
+
+          <div class="oven-visual">
+            <div class="oven-window" id="ovenWindow">
+              <div class="oven-glow"></div>
+              <div class="dough-sprite" id="doughSprite">🥐</div>
+              <div class="oven-flames">🔥🔥🔥</div>
+            </div>
+            <div class="timer-display">
+              <div class="timer-digits" id="timerDigits">15:00</div>
+              <div class="timer-progress-track">
+                <div class="timer-progress-bar" id="timerProgressBar" style="width: 100%"></div>
+              </div>
+              <div class="timer-subtext" id="timerSubtext">Hamur kabarıyor... Süre bitmeden fırından çıkar!</div>
+            </div>
+          </div>
+
+          <div class="oven-actions">
+            <button type="button" class="btn btn-success btn-lg" id="completeTaskBtn">
+              ✅ Görevi Bitirdim! Fırından Çıkar
+            </button>
+            <div class="oven-secondary-row">
+              <button type="button" class="btn btn-ghost btn-sm" id="fastForwardTimerBtn" title="Test etmek için süreyi son 3 saniyeye sar">
+                ⚡ Son 3 Sn (Test)
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" id="cancelActiveTaskBtn">
+                ↩️ Kavanoza Geri Koy
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- 35-Task Jar Hero Card -->
+        <article class="jar-card" id="jarHeroCard">
+          <div class="jar-top-row">
+            <div>
+              <h2 class="section-heading">35 Görev Kavanozu</h2>
+              <p class="section-sub" id="jarCounterText">0 / 35 Görev Tamamlandı • Kavanozda 0 görev var</p>
+            </div>
+            <div class="jar-progress-ring" id="jarProgressBadge">0/35</div>
+          </div>
+
+          <!-- Visual Interactive Glass Jar -->
+          <div class="jar-stage" id="jarStage">
+            <div class="jar-lid"></div>
+            <div class="jar-neck"></div>
+            <div class="jar-body" id="jarBody">
+              <div class="jar-slips-container" id="jarSlipsContainer" aria-hidden="true"></div>
+              <div class="jar-shine"></div>
+              <div class="jar-label-sticker">
+                <span>ZeK'in</span>
+                <strong>35 GÖREVİ</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="jar-controls">
+            <button type="button" class="btn btn-primary btn-xl pulse-cta" id="drawTaskBtn">
+              🎲 Kavanozu Çalkala &amp; Görev Çek!
+            </button>
+            <div class="jar-secondary-btns">
+              <button type="button" class="btn btn-accent" id="openNewTaskBtn">
+                ➕ Yeni Görev Ekle
+              </button>
+              <button type="button" class="btn btn-secondary" id="fillStarterPackBtn">
+                ✨ 35'e Tamamla
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Task List Panel -->
+        <article class="panel-card">
+          <div class="panel-header">
+            <h3>📜 Kavanozdaki Görevler</h3>
+            <span class="badge-count" id="pendingCountBadge">0</span>
+          </div>
+          <p class="panel-hint">İstersen kavanozdan rastgele çek, istersen listeden bir görevi seçip hemen başlat.</p>
+          <ul class="task-list" id="pendingTaskList"></ul>
+        </article>
+      </section>
+
+      <!-- VIEW 2: AKSİYON ARENASI -->
+      <section class="view" id="view-arena" aria-labelledby="arenaViewTitle">
+        <div class="arena-top-bar">
+          <div>
+            <h2 class="section-heading" id="arenaViewTitle">16-Bit Aksiyon Arenası</h2>
+            <p class="section-sub" id="arenaPowerSubtitle">Aktif Şef Gücü: 🥐 Normal Atış</p>
+          </div>
+          <div class="ticket-pill">🎟️ <span id="arenaTicketsCount">1</span> Bilet</div>
+        </div>
+
+        <!-- 3 Mini-Game Mode Cards -->
+        <div class="mode-selector" id="modeSelector">
+          <button type="button" class="mode-card active" data-mode="platform">
+            <span class="mode-emoji">🏃‍♂️🥐</span>
+            <strong>Kruvasan Protokolü</strong>
+            <small>16-Bit Koşu &amp; Boss</small>
+          </button>
+          <button type="button" class="mode-card" data-mode="safari">
+            <span class="mode-emoji">📸🐦</span>
+            <strong>Kuş Safarisi</strong>
+            <small>Odak &amp; Refleks</small>
+          </button>
+          <button type="button" class="mode-card" data-mode="defense">
+            <span class="mode-emoji">🌻🔥</span>
+            <strong>Bahçe Savunması</strong>
+            <small>Kargaları Kov!</small>
+          </button>
+        </div>
+
+        <!-- Game Canvas Stage -->
+        <div class="canvas-wrapper" id="canvasWrapper">
+          <div class="canvas-hud">
+            <span id="gameHudHearts">❤️❤️❤️</span>
+            <span id="gameHudScore">Skor: 0</span>
+            <span id="gameHudGoal">Hedef: %0</span>
+          </div>
+          <canvas id="gameCanvas" width="480" height="360"></canvas>
+
+          <!-- Start / Game Over Overlay inside canvas wrapper -->
+          <div class="canvas-overlay" id="canvasOverlay">
+            <div class="overlay-card">
+              <h3 id="overlayTitle">Kruvasan Protokolü</h3>
+              <p id="overlayDesc">Ekrana dokunarak zıpla ve kruvasan fırlat, parmağını kaydırarak ZeK'i yönlendir, uçan kuşların üzerine dokunup fotoğrafla!</p>
+              <div class="overlay-btns">
+                <button type="button" class="btn btn-primary" id="startTicketGameBtn">
+                  🎟️ Bilet Kullan &amp; Oyna (Tam Ödül)
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" id="startPracticeGameBtn">
+                  🕹️ Ücretsiz Antrenman
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Direct-Touch Gesture Guide -->
+        <div class="touch-guide-bar" id="touchGuideBar">
+          👆 Dokun: Zıpla &amp; Kruvasan At • 🐦 Kuşa Dokun: 📸 Foto Çek • ↔️ Kaydır: Hareket
+        </div>
+      </section>
+
+      <!-- VIEW 3: BAHÇE, KUŞLAR & FIRIN -->
+      <section class="view" id="view-garden" aria-labelledby="gardenViewTitle">
+        <div class="zek-speech-card garden-theme">
+          <img src="./IMG_8924138EE2D3-1.jpeg" alt="Bahçıvan ZeK" class="speech-photo" width="56" height="56">
+          <div class="speech-body">
+            <div class="speech-label" id="gardenViewTitle">ZeK'in Gizli Bahçesi</div>
+            <p id="gardenStatusText">Tamamladığın her görev çiçekleri büyütür ve bahçeye yeni kuşlar çeker.</p>
+          </div>
+        </div>
+
+        <!-- 12 Garden Plots -->
+        <article class="panel-card">
+          <div class="panel-header">
+            <h3>🌷 Çiçek Tarhları (12 Parsel)</h3>
+            <button type="button" class="btn btn-secondary btn-sm" id="plantSeedBtn">🌱 Tohum Ek (10 🥐)</button>
+          </div>
+          <div class="garden-grid" id="gardenGrid"></div>
+        </article>
+
+        <!-- 12 Rare Bird Photo Album -->
+        <article class="panel-card">
+          <div class="panel-header">
+            <div class="album-title-with-photo">
+              <img src="./IMG_372201B13BB8-1.jpeg" alt="Kuş Fotoğrafçısı ZeK" class="mini-round-photo" width="36" height="36">
+              <h3>📷 Kuş Fotoğraf Albümü</h3>
+            </div>
+            <span class="badge-count" id="birdsCountBadge">0 / 12</span>
+          </div>
+          <div class="album-grid" id="birdAlbumGrid"></div>
+        </article>
+
+        <!-- 6 Bakery Recipes -->
+        <article class="panel-card">
+          <div class="panel-header">
+            <h3>🥖 Şef ZeK'in Fırın Defteri</h3>
+            <span class="badge-count" id="recipesCountBadge">1 / 6</span>
+          </div>
+          <div class="recipe-list" id="recipeList"></div>
+        </article>
+      </section>
+
+      <!-- VIEW 4: 35 ADIMLIK MACERA HARİTASI -->
+      <section class="view" id="view-map" aria-labelledby="mapViewTitle">
+        <article class="panel-card">
+          <div class="panel-header">
+            <h2 class="section-heading" id="mapViewTitle">🗺️ 35 Görevlik Krallık Yolu</h2>
+            <span class="badge-count" id="mapProgressBadge">0 / 35</span>
+          </div>
+          <p class="section-sub">Her biten görev haritada bir adım ilerletir. 5, 10, 15, 20, 25, 30 ve 35. adımlarda özel hazineler açılır!</p>
+          <div class="adventure-map" id="adventureMap"></div>
+        </article>
+
+        <article class="panel-card">
+          <div class="panel-header">
+            <h3>🏆 Tamamlanan Son Görevler</h3>
+          </div>
+          <ul class="completed-list" id="completedHistoryList"></ul>
+        </article>
+      </section>
+    </main>
+
+    <!-- Bottom Mobile Navigation -->
+    <nav class="bottom-nav" aria-label="Ana Menü">
+      <button type="button" class="nav-btn active" data-view="jar">
+        <span class="nav-icon">🏺</span>
+        <span class="nav-label">Kavanoz</span>
+      </button>
+      <button type="button" class="nav-btn" data-view="arena">
+        <span class="nav-icon">🎮</span>
+        <span class="nav-label">Aksiyon</span>
+      </button>
+      <button type="button" class="nav-btn" data-view="garden">
+        <span class="nav-icon">🌻</span>
+        <span class="nav-label">Bahçe &amp; Kuş</span>
+      </button>
+      <button type="button" class="nav-btn" data-view="map">
+        <span class="nav-icon">🗺️</span>
+        <span class="nav-label">35 Harita</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- MODAL 1: Yeni Görev Ekle -->
+  <dialog id="taskModal" closedby="any" aria-labelledby="taskModalTitle">
+    <form id="newTaskForm" class="dialog-form">
+      <div class="dialog-header">
+        <h2 id="taskModalTitle">📝 Kavanoza Yeni Görev At</h2>
+        <button type="button" class="close-x" data-close-dialog="taskModal" aria-label="Kapat">✕</button>
+      </div>
+
+      <label class="field-label">
+        Görev Nedir?
+        <input type="text" id="taskTitleInput" required maxlength="80" placeholder="Örn: Masayı topla, faturayı öde, çiçekleri sula..." autofocus>
+      </label>
+
+      <div class="field-label">
+        Kategori
+        <div class="pill-radio-group" id="categoryGroup">
+          <label><input type="radio" name="category" value="Mutfak" checked><span>🥐 Mutfak</span></label>
+          <label><input type="radio" name="category" value="Bahçe"><span>🌱 Bahçe</span></label>
+          <label><input type="radio" name="category" value="Doğa"><span>📷 Doğa</span></label>
+          <label><input type="radio" name="category" value="Günlük"><span>⚡ Günlük</span></label>
+        </div>
+      </div>
+
+      <div class="field-label">
+        3 Kademeli Şef Zorluğu (Puan &amp; Silah Gücü)
+        <div class="difficulty-cards">
+          <label class="diff-option">
+            <input type="radio" name="difficulty" value="kolay" checked>
+            <div class="diff-box">
+              <strong>🥐 Kruvasan (Kolay)</strong>
+              <small>+100 XP • +20 🥐 • Normal Atış</small>
+            </div>
+          </label>
+          <label class="diff-option">
+            <input type="radio" name="difficulty" value="orta">
+            <div class="diff-box">
+              <strong>🥖 Ekşi Maya (Orta)</strong>
+              <small>+250 XP • +45 🥐 • Çift Kruvasan Atışı</small>
+            </div>
+          </label>
+          <label class="diff-option">
+            <input type="radio" name="difficulty" value="zor">
+            <div class="diff-box">
+              <strong>🎂 Özel Tatlı (Zor)</strong>
+              <small>+500 XP • +90 🥐 • Süper Kalkan + 3'lü Atış</small>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="field-label">
+        Görev Süresi (Süre biterse hamur yanar!)
+        <div class="pill-radio-group">
+          <label><input type="radio" name="duration" value="15" checked><span>15 dk</span></label>
+          <label><input type="radio" name="duration" value="30"><span>30 dk</span></label>
+          <label><input type="radio" name="duration" value="45"><span>45 dk</span></label>
+          <label><input type="radio" name="duration" value="60"><span>60 dk</span></label>
+          <label><input type="radio" name="duration" value="0.25"><span>⚡ 15 sn (Demo)</span></label>
+        </div>
+      </div>
+
+      <div class="dialog-footer">
+        <button type="button" class="btn btn-ghost" data-close-dialog="taskModal">İptal</button>
+        <button type="submit" class="btn btn-primary">🏺 Kavanoza At!</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- MODAL 2: Kavanozdan Çıkan Görev -->
+  <dialog id="drawnTaskModal" closedby="any" aria-labelledby="drawnTaskModalTitle">
+    <div class="dialog-card">
+      <div class="dialog-header">
+        <h2 id="drawnTaskModalTitle">📜 Kavanozdan Çıkan Görev!</h2>
+        <button type="button" class="close-x" data-close-dialog="drawnTaskModal" aria-label="Kapat">✕</button>
+      </div>
+      <div class="drawn-slip">
+        <div class="drawn-meta">
+          <span id="drawnDiffBadge" class="oven-badge">🥐 Kolay</span>
+          <span id="drawnDurBadge" class="oven-category">⏱️ 15 dk</span>
+        </div>
+        <h3 id="drawnTitleText" class="drawn-title">Görev Adı</h3>
+        <p id="drawnRewardPreview" class="drawn-reward">Ödül: +100 XP, +20 Altın Kruvasan, +1 Aksiyon Bileti</p>
+      </div>
+      <div class="dialog-footer stack-mobile">
+        <button type="button" class="btn btn-primary btn-lg" id="acceptDrawnTaskBtn">🔥 Fırını Yak &amp; Başla!</button>
+        <button type="button" class="btn btn-secondary" id="redrawTaskBtn">🔄 Başka Kağıt Çek</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- MODAL 3: Görev Sonucu (Başarı veya Hamur Yandı Cezası) -->
+  <dialog id="outcomeModal" closedby="any" aria-labelledby="outcomeModalTitle">
+    <div class="dialog-card">
+      <div class="dialog-header">
+        <h2 id="outcomeModalTitle">Sonuç</h2>
+        <button type="button" class="close-x" data-close-dialog="outcomeModal" aria-label="Kapat">✕</button>
+      </div>
+      <div id="outcomeBody" class="outcome-body"></div>
+      <div id="outcomeActions" class="dialog-footer stack-mobile"></div>
+    </div>
+  </dialog>
+
+  <!-- MODAL 4: Ayarlar & Synology Yedekleme -->
+  <dialog id="settingsModal" closedby="any" aria-labelledby="settingsModalTitle">
+    <div class="dialog-card">
+      <div class="dialog-header">
+        <h2 id="settingsModalTitle">⚙️ Ayarlar &amp; Synology</h2>
+        <button type="button" class="close-x" data-close-dialog="settingsModal" aria-label="Kapat">✕</button>
+      </div>
+      <div class="settings-list">
+        <div class="setting-row">
+          <div>
+            <strong>16-Bit Retro Ses Efektleri</strong>
+            <small>Kavanoz, fırın ve oyun sesleri</small>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="toggleSoundBtn">🔊 Açık</button>
+        </div>
+        <div class="setting-row">
+          <div>
+            <strong>ZeK Portre Stili</strong>
+            <small>Gerçek fotoğraf veya 16-bit piksel</small>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="togglePortraitBtn">📷 Gerçek</button>
+        </div>
+        <div class="setting-row">
+          <div>
+            <strong>Veri Yedekleme (JSON)</strong>
+            <small id="serverSyncDetail">Yerel Tarayıcı Hafızası</small>
+          </div>
+          <div class="row-gap">
+            <button type="button" class="btn btn-secondary btn-sm" id="exportDataBtn">⬇️ İndir</button>
+            <label class="btn btn-secondary btn-sm file-label">
+              ⬆️ Yükle
+              <input type="file" id="importDataInput" accept=".json" hidden>
+            </label>
+          </div>
+        </div>
+        <div class="setting-row danger-zone">
+          <div>
+            <strong>Oyunu Sıfırla</strong>
+            <small>Tüm görevler ve ilerleme sıfırlanır</small>
+          </div>
+          <button type="button" class="btn btn-danger btn-sm" id="resetAllBtn">🗑️ Sıfırla</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="./game-engine.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "ZeK: Görev Kavanozu & Kruvasan Krallığı",
+  "short_name": "ZeK Kavanoz",
+  "description": "DEHB dostu 16-bit aksiyonlu görev kavanozu, bahçe ve kuş fotoğrafçılığı oyunu.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#161324",
+  "theme_color": "#1e1b2e",
+  "icons": [
+    {
+      "src": "./IMG_9A4EEE619E96-1.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
